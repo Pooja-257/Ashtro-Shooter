@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Obstacle Avoidance Game</title>
+
+  <!-- p5 + ml5 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.dom.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.sound.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ml5@0.6.0/dist/ml5.min.js"></script>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+
+  <style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #020617, #0f172a);
+  color: white;
+  overflow: hidden;
+}
+
+/* LOGIN */
+#loginScreen {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+
+    button {
+      padding: 15px 30px;
+      font-size: 18px;
+      background: #00c3ff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #0099cc;
+    }
+
+/* START SCREEN */
+#startScreen {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+
+/* ================= TOP BAR ================= */
+.top-bar {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 60px;
+  background: rgba(15, 23, 42, 0.95);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 25px;
+  box-sizing: border-box;
+  border-bottom: 1px solid #1f2937;
+}
+
+/* PROFILE */
+.profile-mini {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#userImgTop {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-mini span {
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+/* TOP BUTTONS */
+.top-actions button {
+  margin-left: 10px;
+  padding: 8px 14px;
+  background: #1f2937;
+  border: none;
+  border-radius: 8px;
+  color: #e5e7eb;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.top-actions button:hover {
+  background: #374151;
+}
+
+/* ================= CENTER MENU ================= */
+.center-menu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);  /* 🔥 FIX */
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* TITLE */
+.center-menu h1 {
+  font-size: 48px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #e5e7eb;
+}
+
+/* CARD */
+.menu-card {
+  background: #111827;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* BUTTONS */
+.menu-card button {
+  width: 240px;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+  font-weight: 500;
+}
+
+/* PRIMARY */
+.menu-card button:first-child {
+  background: #2563eb;
+  color: white;
+}
+
+.menu-card button:first-child:hover {
+  background: #1d4ed8;
+}
+
+/* SECONDARY */
+.menu-card button:last-child {
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+.menu-card button:last-child:hover {
+  background: #374151;
+}
+
+/* ================= LEADERBOARD ================= */
+#leaderboardPopup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #111827;
+  padding: 25px;
+  border-radius: 12px;
+  width: 300px;
+  display: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+#leaderboardPopup h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+#leaderboard li {
+  padding: 8px;
+  border-bottom: 1px solid #1f2937;
+  font-size: 14px;
+}
+
+#leaderboardPopup button {
+  margin-top: 15px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+#leaderboardPopup button:hover {
+  background: #1d4ed8;
+}
+#backDashboardBtn {
+  position: absolute;
+  top: 65%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  display: none;   /* 🔥 hidden by default */
+  cursor: pointer;
+  z-index: 20;
+}
+#gameOverButtons {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+
+  justify-content: center;
+  align-items: center;
+}
+
+.game-over-box {
+  text-align: center;
+  background: rgba(0, 0, 20, 0.6);
+  padding: 30px 50px;
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 20px rgba(0,255,255,0.5);
+}
+
+.btn {
+  display: block;
+  width: 200px;
+  margin: 15px auto;
+  padding: 12px;
+  font-size: 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+/* Restart Button */
+.restart {
+  background: linear-gradient(45deg, #00ffc8, #00bfff);
+  color: black;
+}
+
+.restart:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px #00ffc8;
+}
+
+/* Dashboard Button */
+.dashboard {
+  background: linear-gradient(45deg, #ff5c5c, #ff9966);
+  color: white;
+}
+
+.dashboard:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px #ff5c5c;
+}
+
+</style>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  
+  <h1>🚀 Astro Shooter</h1>
+  <button onclick="googleLogin()">Login with Google</button>
+</div>
+
+
+<!-- START SCREEN -->
+<div id="startScreen">
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="profile-mini">
+      <img id="userImgTop">
+      <span id="userName"></span>
+    </div>
+
+    <div class="top-actions">
+      <span id="topHighScore" style="
+  background:#1f2937;
+  padding:6px 12px;
+  border-radius:8px;
+  color:#facc15;
+  font-weight:600;
+">
+  High Score: 0
+</span>
+      <!-- <button onclick="toggleLeaderboard()">🏆 Leaderboard</button> -->
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="center-menu">
+    <h1>🚀 Astro Shooter</h1>
+
+    <div class="menu-card">
+      <button onclick="startQuiz()">Start Quiz</button>
+      <!-- <button onclick="startGame()">Start Game</button> -->
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="leaderboardPopup">
+    <h2>🏆 Leaderboard</h2>
+    <ul id="leaderboard"></ul>
+    <button onclick="closeLeaderboard()">Close</button>
+  </div>
+
+</div>
+<button id="backDashboardBtn" onclick="goToDashboard()">
+  Back to Dashboard
+</button>
+
+  <!-- GAME -->
+  <script src="js/quiz.js"></script>
+  <script src="sketch.js"></script>
+
+  <!-- FIREBASE -->
+  <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBYNxkeBEp1xDM8Rg7bXiFo8WusOGVEYNc",
+    authDomain: "astro-shooter-6116f.firebaseapp.com",
+    projectId: "astro-shooter-6116f",
+    storageBucket: "astro-shooter-6116f.firebasestorage.app",
+    messagingSenderId: "1006820906155",
+    appId: "1:1006820906155:web:bcf73e550d79211f4a53ee",
+    measurementId: "G-SS3Y03QTQ9"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const provider = new firebase.auth.GoogleAuthProvider();
+  const db = firebase.firestore();
+
+  // ================= LOGIN =================
+  function googleLogin() {
+    auth.signInWithPopup(provider)
+      .then((result) => {
+        localStorage.setItem("user", JSON.stringify(result.user));
+        showStartScreen(result.user);
+      })
+      .catch((error) => {
+        console.error("Login Error:", error);
+      });
+  }
+
+  // ================= SHOW DASHBOARD =================
+  function showStartScreen(user) {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("startScreen").style.display = "flex";
+
+    // Profile
+    document.getElementById("userName").innerText = user.displayName;
+
+    let img = document.getElementById("userImgTop");
+
+// default fallback first
+img.src = "https://ui-avatars.com/api/?name=" + user.displayName;
+
+// try loading real photo
+if (user.photoURL && user.photoURL.trim() !== "") {
+  img.src = user.photoURL;
+}
+
+// 🔥 if image fails → fallback automatically
+img.onerror = function () {
+  this.src = "https://ui-avatars.com/api/?name=" + user.displayName;
+};
+    let highScore = localStorage.getItem("highScore") || 0;
+    document.getElementById("topHighScore").innerText = "High Score: " + highScore;
+
+    noLoop();
+  }
+
+  // ================= LEADERBOARD OPEN =================
+  function toggleLeaderboard() {
+    document.getElementById("leaderboardPopup").style.display = "block";
+    loadLeaderboard();
+  }
+function goToDashboard() {
+  document.getElementById("startScreen").style.display = "flex";
+  document.getElementById("backDashboardBtn").style.display = "none";
+
+  appState = "IDLE";
+  noLoop();
+  let highScore = localStorage.getItem("highScore") || 0;
+  document.getElementById("topHighScore").innerText = "🏆 " + highScore;
+}
+  function closeLeaderboard() {
+    document.getElementById("leaderboardPopup").style.display = "none";
+  }
+
+  // ================= LOAD LEADERBOARD =================
+  function loadLeaderboard() {
+    let list = document.getElementById("leaderboard");
+    list.innerHTML = "Loading...";
+
+    db.collection("leaderboard")
+      .orderBy("score", "desc")
+      .limit(10)
+      .get()
+      .then(snapshot => {
+        list.innerHTML = "";
+
+        if (snapshot.empty) {
+          list.innerHTML = "<li>No scores yet</li>";
+          return;
+        }
+
+        snapshot.forEach((doc, index) => {
+          let data = doc.data();
+          let li = document.createElement("li");
+
+          // 🏆 Rank styling
+          let medal = "";
+          if (index === 0) medal = "🥇 ";
+          else if (index === 1) medal = "🥈 ";
+          else if (index === 2) medal = "🥉 ";
+
+          li.innerText = `${medal}${data.name} - ${data.score}`;
+          list.appendChild(li);
+        });
+      })
+      .catch(err => {
+        console.error("Leaderboard Error:", err);
+
+        // 🔥 FALLBACK (FOR DEMO SAFETY)
+        list.innerHTML = `
+          <li>🥇 Vaishnavi - 120</li>
+          <li>🥈 Player1 - 90</li>
+          <li>🥉 Player2 - 70</li>
+        `;
+      });
+  }
+
+  // ================= CHECK LOGIN =================
+  function checkLogin() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) showStartScreen(user);
+    else noLoop();
+  }
+
+  window.onload = checkLogin;
+
+  // ================= LOGOUT =================
+  function logout() {
+    auth.signOut().then(() => {
+      localStorage.removeItem("user");
+      location.reload();
+    });
+  }
+  function restartGame() {
+  obstacles = [];
+  score = 0;
+  isGameOver = false;
+
+  paddle = new Paddle();
+  paddle.bullets = [];
+  paddle.x = width / 2 - paddle.width / 2;
+
+  appState = "GAME";
+  loop();
+
+  document.getElementById("gameOverButtons").style.display = "none";
+}
+
+function goToDashboard() {
+  document.getElementById("startScreen").style.display = "flex";
+
+  obstacles = [];
+  score = 0;
+  isGameOver = false;
+
+  appState = "IDLE";
+  noLoop();
+
+  document.getElementById("gameOverButtons").style.display = "none";
+}
+</script>
+<div id="gameOverButtons">
+  <div class="game-over-box">
+    <button onclick="restartGame()" class="btn restart">RePlay</button>
+    <button onclick="goToDashboard()" class="btn dashboard">Dashboard</button>
+  </div>
+</div>
+
+</body>
+</html>
